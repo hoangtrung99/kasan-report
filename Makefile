@@ -38,6 +38,7 @@ report-template:
 	@make init-report-folder ${SET_VARS}
 # @make http_status_403_report ${SET_VARS}
 	@make http_status_500_report ${SET_VARS}
+	@make synthetics_front_report ${SET_VARS}
 
 
 http_status_403_report:
@@ -54,7 +55,7 @@ http_status_403_report:
 		> ${METRIC_REPORT_FOLDER}/http_status_403_raw.csv
 	@make line
 	@make process_csv INPUT=${METRIC_REPORT_FOLDER}/http_status_403_raw.csv \
-										OUTPUT=${METRIC_REPORT_FOLDER}/http_status_403.csv
+						OUTPUT=${METRIC_REPORT_FOLDER}/http_status_403.csv
 	@make line
 
 http_status_500_report:
@@ -71,5 +72,22 @@ http_status_500_report:
 		> ${METRIC_REPORT_FOLDER}/http_status_500_raw.csv
 	@make line
 	@make process_csv INPUT=${METRIC_REPORT_FOLDER}/http_status_500_raw.csv \
-										OUTPUT=${METRIC_REPORT_FOLDER}/http_status_500.csv
+						OUTPUT=${METRIC_REPORT_FOLDER}/http_status_500.csv
+	@make line
+
+synthetics_front_report:
+	@echo "Make synthetics front report"
+	@make line
+	aws cloudwatch get-metric-statistics \
+		--namespace CloudWatchSynthetics --metric-name SuccessPercent \
+		--statistics Maximum \
+		--start-time ${START_TIME} \
+		--end-time ${END_TIME} \
+		--period 3600 \
+		--region ap-northeast-1 | \
+		jq -r '.Datapoints[] | [.Timestamp, .Maximum, .Unit] | @csv' \
+		> ${METRIC_REPORT_FOLDER}/synthetics_front_raw.csv
+	@make line
+	@make process_csv INPUT=${METRIC_REPORT_FOLDER}/synthetics_front_raw.csv \
+						OUTPUT=${METRIC_REPORT_FOLDER}/synthetics_front.csv HEADER=Timestamp,Maximum,Unit
 	@make line

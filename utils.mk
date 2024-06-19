@@ -39,10 +39,11 @@ print_aws_credential_docs:
 	credentials in the ~/.aws/credentials file. \n\
 	2. Set the AWS_PROFILE environment variable to the profile name in the AWS credentials file."
 
+HEADER = "Timestamp,Sum"
 process_csv:
 	@echo "Processing and formatting CSV file: $(OUTPUT)"
 	@sort -t',' -k1,1 $(INPUT) | \
-		awk 'BEGIN {print "Timestamp,Sum"} \
+		awk 'BEGIN {print "$(HEADER)"} \
 		     { gsub(/\"/, "", $$1); gsub(/Z/, "", $$1);\
 			  gsub(/T/, " ", $$1); gsub(/\+00:00/, "", $$1);\
 			   printf "\"%s\", %s\n", $$1, $$2 }' > $(OUTPUT)
