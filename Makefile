@@ -4,6 +4,12 @@
 include variables.mk
 include utils.mk
 
+COMMAND_MKS := $(wildcard config/*/command.mk)
+$(foreach mk,$(COMMAND_MKS),$(eval include $(mk)))
+
+
+.PHONY: all report report-today report-template
+
 #TODO: make run default make command
 .DEFAULT_GOAL := all
 
@@ -28,6 +34,9 @@ report-today: init validate report-template
 SET_VARS = START_TIME=$(START_TIME) END_TIME=$(END_TIME) \
 			METRIC_REPORT_FOLDER=$(METRIC_REPORT_FOLDER)
 
+REPORTS := $(patsubst config/%/command.mk,%,$(COMMAND_MKS))
+
+
 report-template:
 	@make line
 	$(call print_yellow,Make kasan report)
@@ -36,66 +45,15 @@ report-template:
 	@echo "End time  : $(END_TIME)"
 	@make line
 	@make init-report-folder ${SET_VARS}
-# @make http_status_403_report ${SET_VARS}
-	@make http_status_500_report ${SET_VARS}
+#	@make http_status_500_report ${SET_VARS}
 #	@make synthetics_front_report ${SET_VARS}
+#	auto run all reports
+	@make create-report ${SET_VARS}
 
+define run_report
+	$(@info Make $(1))
+	@make $(1) $(SET_VARS)
+endef
 
-http_status_403_report:
-	@echo "Make 403 report"
-	@make line
-	aws cloudwatch get-metric-statistics \
-		--namespace Backend --metric-name HTTP_STATUS_403 \
-		--statistics Sum \
-		--start-time ${START_TIME} \
-		--end-time ${END_TIME} \
-		--period 86400 \
-		--region ap-northeast-1 | \
-		jq -r '.Datapoints[] | [.Timestamp, .Sum] |\ @csv' \
-		> ${METRIC_REPORT_FOLDER}/http_status_403_raw.csv
-	@make line
-	@make process_csv INPUT=${METRIC_REPORT_FOLDER}/http_status_403_raw.csv \
-						OUTPUT=${METRIC_REPORT_FOLDER}/http_status_403.csv
-	@make line
-
-http_status_500_report:
-	$(call print_yellow, Make http status 500 report)
-	mkdir ${METRIC_REPORT_FOLDER}/$@
-	@make line
-	aws cloudwatch get-metric-statistics \
-		--namespace Backend --metric-name HTTP_STATUS_500 \
-		--statistics Sum \
-		--start-time ${START_TIME} \
-		--end-time ${END_TIME} \
-		--period 86400 \
-		--region ap-northeast-1 | \
-		jq -r '.Datapoints[] | [.Timestamp, .Sum] | @csv' \
-		> ${METRIC_REPORT_FOLDER}/$@/http_status_500_raw.csv
-	@make line
-	@make ${METRIC_REPORT_FOLDER}/$@/http_status_500.csv HEADER=Timestamp,Sum
-	@make line
-	$(call print_green,Make http status 500 chart...)
-	@make line
-	@aws cloudwatch get-metric-widget-image \
-        --metric-widget "$$(envsubst < config/widget_definition/500.json)" \
-        --output-format png \
-        --output text \
-        |  base64 -d > ${METRIC_REPORT_FOLDER}/$@/http_status_500_chart.png
-	@echo Make chart ok!
-	@make line
-
-synthetics_front_report:
-	$(call print_yellow,Make synthetics front report)
-	@make line
-	aws cloudwatch get-metric-statistics \
-		--namespace CloudWatchSynthetics --metric-name SuccessPercent \
-		--statistics Maximum \
-		--start-time ${START_TIME} \
-		--end-time ${END_TIME} \
-		--period 3600 \
-		--region ap-northeast-1 | \
-		jq -r '.Datapoints[] | [.Timestamp, .Maximum, .Unit] | @csv' \
-		> ${METRIC_REPORT_FOLDER}/synthetics_front_raw.csv
-	@make line
-	@make ${METRIC_REPORT_FOLDER}/synthetics_front.csv HEADER=Timestamp,Maximum,Unit
-	@make line
+create-report:
+	$(foreach report,$(REPORTS),$(call run_report,$(report)))

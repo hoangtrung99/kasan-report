@@ -2,6 +2,20 @@ include variables.mk
 
 .PHONY: init validate line print_aws_credential_docs init-report-folder
 
+define print_green
+	@echo "$(GREEN)$(1)$(RESET)"
+endef
+
+define print_yellow
+	@echo "$(YELLOW)$(1)$(RESET)"
+endef
+
+define read_var
+    $(foreach line,$(shell cat $(1)),\
+        $(eval export $(line)))
+endef
+
+
 init:
 	@mkdir -p ${METRIC_FOLDER}
 
@@ -9,6 +23,9 @@ init-report-folder:
 	@echo "Init report folder: metrics/$(shell echo ${END_TIME} | cut -d'T' -f1)"
 	@mkdir -p metrics/$(shell echo ${END_TIME} | cut -d'T' -f1)
 	@make line
+
+init-report-sub-folder:
+	@mkdir -p ${METRIC_REPORT_FOLDER}/${REPORT_NAME}
 
 validate:
 	@if [ -z "$(AWS_PROFILE)" ]; then \
@@ -39,6 +56,9 @@ print_aws_credential_docs:
 	credentials in the ~/.aws/credentials file. \n\
 	2. Set the AWS_PROFILE environment variable to the profile name in the AWS credentials file."
 
+clean:
+	rm -rf ${METRIC_FOLDER}
+
 HEADER = Timestamp,Sum
 process_csv:
 	@echo "$(GREEN)Processing and formatting CSV file: $(OUTPUT)$(RESET)"
@@ -57,17 +77,10 @@ process_csv:
 		       } \
 		     }' >> $(OUTPUT)
 
-define print_green
-	@echo "$(GREEN)$(1)$(RESET)"
-endef
-
-define print_yellow
-	@echo "$(YELLOW)$(1)$(RESET)"
-endef
 
 # process_csv
 %.csv: %_raw.csv
-	$(call print_green,Processing and formatting CSV file: $@)
+	$(call print_green,Processing and formatting CSV file: \n$@)
 	@echo "$(HEADER)" > $@
 	@sort -t',' -k1,1 $< | \
 		awk 'BEGIN {FS=","; OFS=","} \
@@ -83,5 +96,34 @@ endef
 		       } \
 		     }' >> $@
 
-clean:
-	rm -rf ${METRIC_FOLDER}
+report-chart:
+	$(call print_green,"Make ${REPORT_NAME} chart...")
+	@make line
+	@aws cloudwatch get-metric-widget-image \
+        --metric-widget "$$(envsubst < config/${REPORT_NAME}/image_widget.json | jq '.period |= tonumber')" \
+        --output-format png \
+        --output text \
+        |  base64 -d > ${METRIC_REPORT_FOLDER}/${REPORT_NAME}/${REPORT_NAME}_chart.png
+	${call print_green,"Make ${REPORT_NAME} chart ok!"}
+	
+
+report-setup:
+	$(call print_yellow,"Make ${REPORT_NAME}")
+	@make init-report-sub-folder
+	@make line
+	aws cloudwatch get-metric-statistics \
+		--namespace ${NAMESPACE} --metric-name ${METRIC_NAME} \
+		--statistics ${STATISTIC} \
+		--start-time ${START_TIME} \
+		--end-time ${END_TIME} \
+		--period ${PERIOD} \
+		--region ${REGION} | \
+		${TRANSFORM} > \
+		${METRIC_REPORT_FOLDER}/${REPORT_NAME}/${REPORT_NAME}_raw.csv
+
+report-result:
+	@make line
+	@make ${METRIC_REPORT_FOLDER}/${REPORT_NAME}/${REPORT_NAME}.csv HEADER=${CSV_HEADER}
+	@make line
+	@make report-chart
+	@make line

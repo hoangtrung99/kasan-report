@@ -1,0 +1,7 @@
+NAMESPACE=Backend
+METRIC_NAME=HTTP_STATUS_500
+STATISTIC=Sum
+PERIOD=86400
+REGION=ap-northeast-1
+CSV_HEADER=Timestamp,Sum
+TRANSFORM=jq -r '.Datapoints[] | [.Timestamp, .Sum] | @csv'

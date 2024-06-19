@@ -3,9 +3,9 @@
   "height": 720,
   "view": "timeSeries",
   "stacked": false,
-  "metrics": [["Backend", "HTTP_STATUS_500", { "stat": "Sum" }]],
-  "period": 86400,
+  "metrics": [["${NAMESPACE}", "${METRIC_NAME}", { "stat": "${STATISTIC}" }]],
+  "period": "${PERIOD}",
   "start": "${START_TIME}",
   "end": "${END_TIME}",
-  "region": "ap-northeast-1"
+  "region": "${REGION}"
 }
