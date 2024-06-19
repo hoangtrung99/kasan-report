@@ -11,9 +11,11 @@ define print_yellow
 endef
 
 define read_var
-    $(foreach line,$(shell cat $(1)),\
-        $(eval export $(line)))
+    $(foreach var,$(shell sed -n 's/^\([^=]*\)=.*/\1/p' $(1)), \
+        $(eval export $(var)=$(shell sed -n 's/^$(var)=\(.*\)/\1/p' $(1))) \
+    )
 endef
+
 
 
 init:
@@ -99,7 +101,8 @@ process_csv:
 report-chart:
 	$(call print_green,"Make ${REPORT_NAME} chart...")
 	@make line
-	@aws cloudwatch get-metric-widget-image \
+	@export START_TIME=${START_TIME} END_TIME=${END_TIME} && \
+	aws cloudwatch get-metric-widget-image \
         --metric-widget "$$(envsubst < config/${REPORT_NAME}/image_widget.json | jq '.period |= tonumber')" \
         --output-format png \
         --output text \
