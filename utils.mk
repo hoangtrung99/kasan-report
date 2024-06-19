@@ -8,6 +8,7 @@ init:
 init-report-folder:
 	@echo "Init report folder: metrics/$(shell echo ${END_TIME} | cut -d'T' -f1)"
 	@mkdir -p metrics/$(shell echo ${END_TIME} | cut -d'T' -f1)
+	@make line
 
 validate:
 	@if [ -z "$(AWS_PROFILE)" ]; then \
@@ -16,7 +17,7 @@ validate:
 	fi
 
 line:
-	@echo "-----------------------------------------------------------"
+	@echo "-------------------------------------------------------------------------------------"
 
 
 required_jq:
@@ -37,3 +38,11 @@ print_aws_credential_docs:
 	1. Set the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables. Or config \
 	credentials in the ~/.aws/credentials file. \n\
 	2. Set the AWS_PROFILE environment variable to the profile name in the AWS credentials file."
+
+process_csv:
+	@echo "Processing and formatting CSV file: $(OUTPUT)"
+	@sort -t',' -k1,1 $(INPUT) | \
+		awk 'BEGIN {print "Timestamp,Sum"} \
+		     { gsub(/\"/, "", $$1); gsub(/Z/, "", $$1);\
+			  gsub(/T/, " ", $$1); gsub(/\+00:00/, "", $$1);\
+			   printf "\"%s\", %s\n", $$1, $$2 }' > $(OUTPUT)
