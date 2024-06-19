@@ -38,7 +38,7 @@ report-template:
 	@make init-report-folder ${SET_VARS}
 # @make http_status_403_report ${SET_VARS}
 	@make http_status_500_report ${SET_VARS}
-	@make synthetics_front_report ${SET_VARS}
+#	@make synthetics_front_report ${SET_VARS}
 
 
 http_status_403_report:
@@ -59,7 +59,8 @@ http_status_403_report:
 	@make line
 
 http_status_500_report:
-	$(call print_yellow,Make http status 500 report)
+	$(call print_yellow, Make http status 500 report)
+	mkdir ${METRIC_REPORT_FOLDER}/$@
 	@make line
 	aws cloudwatch get-metric-statistics \
 		--namespace Backend --metric-name HTTP_STATUS_500 \
@@ -69,10 +70,18 @@ http_status_500_report:
 		--period 86400 \
 		--region ap-northeast-1 | \
 		jq -r '.Datapoints[] | [.Timestamp, .Sum] | @csv' \
-		> ${METRIC_REPORT_FOLDER}/http_status_500_raw.csv
+		> ${METRIC_REPORT_FOLDER}/$@/http_status_500_raw.csv
 	@make line
-	@make process_csv INPUT=${METRIC_REPORT_FOLDER}/http_status_500_raw.csv \
-						OUTPUT=${METRIC_REPORT_FOLDER}/http_status_500.csv
+	@make ${METRIC_REPORT_FOLDER}/$@/http_status_500.csv HEADER=Timestamp,Sum
+	@make line
+	$(call print_green,Make http status 500 chart...)
+	@make line
+	@aws cloudwatch get-metric-widget-image \
+        --metric-widget "$$(envsubst < config/widget_definition/500.json)" \
+        --output-format png \
+        --output text \
+        |  base64 -d > ${METRIC_REPORT_FOLDER}/$@/http_status_500_chart.png
+	@echo Make chart ok!
 	@make line
 
 synthetics_front_report:

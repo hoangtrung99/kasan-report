@@ -82,3 +82,6 @@ endef
 		         printf (i < NF ? "\"%s\"," : "\"%s\"\n", $$i); \
 		       } \
 		     }' >> $@
+
+clean:
+	rm -rf ${METRIC_FOLDER}
