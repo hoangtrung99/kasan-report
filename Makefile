@@ -30,7 +30,7 @@ SET_VARS = START_TIME=$(START_TIME) END_TIME=$(END_TIME) \
 
 report-template:
 	@make line
-	@echo "Make report"
+	$(call print_yellow,Make kasan report)
 	@make line
 	@echo "Start time: $(START_TIME)"
 	@echo "End time  : $(END_TIME)"
@@ -59,7 +59,7 @@ http_status_403_report:
 	@make line
 
 http_status_500_report:
-	@echo "Make http status 500 report"
+	$(call print_yellow,Make http status 500 report)
 	@make line
 	aws cloudwatch get-metric-statistics \
 		--namespace Backend --metric-name HTTP_STATUS_500 \
@@ -76,7 +76,7 @@ http_status_500_report:
 	@make line
 
 synthetics_front_report:
-	@echo "Make synthetics front report"
+	$(call print_yellow,Make synthetics front report)
 	@make line
 	aws cloudwatch get-metric-statistics \
 		--namespace CloudWatchSynthetics --metric-name SuccessPercent \
@@ -88,6 +88,5 @@ synthetics_front_report:
 		jq -r '.Datapoints[] | [.Timestamp, .Maximum, .Unit] | @csv' \
 		> ${METRIC_REPORT_FOLDER}/synthetics_front_raw.csv
 	@make line
-	@make process_csv INPUT=${METRIC_REPORT_FOLDER}/synthetics_front_raw.csv \
-						OUTPUT=${METRIC_REPORT_FOLDER}/synthetics_front.csv HEADER=Timestamp,Maximum,Unit
+	@make ${METRIC_REPORT_FOLDER}/synthetics_front.csv HEADER=Timestamp,Maximum,Unit
 	@make line

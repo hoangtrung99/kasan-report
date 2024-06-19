@@ -39,11 +39,46 @@ print_aws_credential_docs:
 	credentials in the ~/.aws/credentials file. \n\
 	2. Set the AWS_PROFILE environment variable to the profile name in the AWS credentials file."
 
-HEADER = "Timestamp,Sum"
+HEADER = Timestamp,Sum
 process_csv:
-	@echo "Processing and formatting CSV file: $(OUTPUT)"
+	@echo "$(GREEN)Processing and formatting CSV file: $(OUTPUT)$(RESET)"
+	@echo "$(HEADER)" > $(OUTPUT)
 	@sort -t',' -k1,1 $(INPUT) | \
-		awk 'BEGIN {print "$(HEADER)"} \
-		     { gsub(/\"/, "", $$1); gsub(/Z/, "", $$1);\
-			  gsub(/T/, " ", $$1); gsub(/\+00:00/, "", $$1);\
-			   printf "\"%s\", %s\n", $$1, $$2 }' > $(OUTPUT)
+		awk 'BEGIN {FS=","; OFS=","} \
+		     { \
+		       for (i = 1; i <= NF; i++) { \
+		         gsub(/\"/, "", $$i); \
+		         if (i == 1) { \
+		           gsub(/Z/, "", $$i); \
+		           gsub(/T/, " ", $$i); \
+		           gsub(/\+00:00/, "", $$i); \
+		         } \
+		         printf (i < NF ? "\"%s\"," : "\"%s\"\n", $$i); \
+		       } \
+		     }' >> $(OUTPUT)
+
+define print_green
+	@echo "$(GREEN)$(1)$(RESET)"
+endef
+
+define print_yellow
+	@echo "$(YELLOW)$(1)$(RESET)"
+endef
+
+# process_csv
+%.csv: %_raw.csv
+	$(call print_green,Processing and formatting CSV file: $@)
+	@echo "$(HEADER)" > $@
+	@sort -t',' -k1,1 $< | \
+		awk 'BEGIN {FS=","; OFS=","} \
+		     { \
+		       for (i = 1; i <= NF; i++) { \
+		         gsub(/\"/, "", $$i); \
+		         if (i == 1) { \
+		           gsub(/Z/, "", $$i); \
+		           gsub(/T/, " ", $$i); \
+		           gsub(/\+00:00/, "", $$i); \
+		         } \
+		         printf (i < NF ? "\"%s\"," : "\"%s\"\n", $$i); \
+		       } \
+		     }' >> $@
