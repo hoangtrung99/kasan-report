@@ -1,0 +1,11 @@
+{
+  "width": 1200,
+  "height": 720,
+  "view": "timeSeries",
+  "stacked": false,
+  "metrics": [["${NAMESPACE}", "${METRIC_NAME}", { "stat": "${STATISTIC}" }]],
+  "period": "${PERIOD}",
+  "start": "${START_TIME}",
+  "end": "${END_TIME}",
+  "region": "${REGION}"
+}

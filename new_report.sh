@@ -62,6 +62,8 @@ PERIOD=$PERIOD
 REGION=$REGION
 CSV_HEADER=Timestamp,\${STATISTIC},Unit
 TRANSFORM=jq -r '.Datapoints[] | [.Timestamp, .\${STATISTIC}, .Unit] | @csv'
+DIMENSIONS=
+UNIT=
 EOF
 
 # make file image-widget.json

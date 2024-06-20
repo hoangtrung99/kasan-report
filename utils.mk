@@ -1,22 +1,7 @@
 include variables.mk
+include fn.mk
 
 .PHONY: init validate line print_aws_credential_docs init-report-folder
-
-define print_green
-	@echo "$(GREEN)$(1)$(RESET)"
-endef
-
-define print_yellow
-	@echo "$(YELLOW)$(1)$(RESET)"
-endef
-
-define read_var
-    $(foreach var,$(shell sed -n 's/^\([^=]*\)=.*/\1/p' $(1)), \
-        $(eval export $(var)=$(shell sed -n 's/^$(var)=\(.*\)/\1/p' $(1))) \
-    )
-endef
-
-
 
 init:
 	@mkdir -p ${METRIC_FOLDER}
@@ -103,7 +88,7 @@ report-chart:
 	@make line
 	@export START_TIME=${START_TIME} END_TIME=${END_TIME} && \
 	aws cloudwatch get-metric-widget-image \
-        --metric-widget "$$(envsubst < config/${REPORT_NAME}/image_widget.json | jq '.period |= tonumber')" \
+         --metric-widget "$$(envsubst < config/${REPORT_NAME}/image_widget.json | jq '.period |= tonumber')" \
         --output-format png \
         --output text \
         |  base64 -d > ${METRIC_REPORT_FOLDER}/${REPORT_NAME}/${REPORT_NAME}_chart.png
@@ -120,6 +105,8 @@ report-setup:
 		--start-time ${START_TIME} \
 		--end-time ${END_TIME} \
 		--period ${PERIOD} \
+		$(if $(DIMENSIONS),--dimensions ${DIMENSIONS}) \
+		$(if $(UNIT),--unit ${UNIT}) \
 		--region ${REGION} | \
 		${TRANSFORM} > \
 		${METRIC_REPORT_FOLDER}/${REPORT_NAME}/${REPORT_NAME}_raw.csv

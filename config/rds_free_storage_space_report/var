@@ -1,0 +1,7 @@
+NAMESPACE=AWS/RDS
+METRIC_NAME=FreeStorageSpace
+STATISTIC=Minimum
+PERIOD=86400
+REGION=ap-northeast-1
+CSV_HEADER=Timestamp,${STATISTIC},Unit
+TRANSFORM=jq -r '.Datapoints[] | [.Timestamp, .${STATISTIC}, .Unit] | @csv'

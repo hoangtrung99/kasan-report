@@ -1,0 +1,21 @@
+{
+  "width": 1200,
+  "height": 720,
+  "view": "timeSeries",
+  "stacked": false,
+  "metrics": [
+    [
+      "${NAMESPACE}",
+      "${METRIC_NAME}",
+      "TargetGroup",
+      "targetgroup/kasanpro-kainavi-jp-tg-green/902516cbaca51c2f",
+      "LoadBalancer",
+      "app/kasanpro-kainavi-jp-lb/fa618c31b9c30e23",
+      { "stat": "${STATISTIC}" }
+    ]
+  ],
+  "period": "${PERIOD}",
+  "start": "${START_TIME}",
+  "end": "${END_TIME}",
+  "region": "${REGION}"
+}

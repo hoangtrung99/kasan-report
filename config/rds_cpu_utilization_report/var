@@ -1,7 +1,7 @@
-NAMESPACE=Backend
-METRIC_NAME=HTTP_STATUS_403
-STATISTIC=Sum
-PERIOD=86400
+NAMESPACE=AWS/RDS
+METRIC_NAME=CPUUtilization
+STATISTIC=Maximum
+PERIOD=21600
 REGION=ap-northeast-1
 CSV_HEADER=Timestamp,${STATISTIC},Unit
 TRANSFORM=jq -r '.Datapoints[] | [.Timestamp, .${STATISTIC}, .Unit] | @csv'
