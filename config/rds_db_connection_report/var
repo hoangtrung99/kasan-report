@@ -1,5 +1,5 @@
 NAMESPACE=AWS/RDS
-METRIC_NAME=CPUUtilization
+METRIC_NAME=DatabaseConnections
 STATISTIC=Maximum
 PERIOD=3600
 REGION=ap-northeast-1
